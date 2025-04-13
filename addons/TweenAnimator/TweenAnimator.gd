@@ -25,7 +25,8 @@ enum Animations {
 	BLINK,            SQUASH,            STRETCH,        SNAP,           TYPEWRITER,
 	COLOR_CYCLE,      HEARTBEAT,         SWING,          CHARGE_UP,      RICHOCHET,
 	GLITCH,           SPOTLIGHT,         WAVE_DISTORT,   WIGGLE,         FLOAT_BOB,
-	GLOW_PULSE,       TWIST,             SPOTLIGHT_ON,   SPOTLIGHT_OFF
+	GLOW_PULSE,       TWIST,             SPOTLIGHT_ON,   SPOTLIGHT_OFF,  DISAPPEAR,
+	ROTATE_HOP,       EXPLODE,            BLACK_HOLE
 }
 
 static var animation_names := {
@@ -64,7 +65,11 @@ static var animation_names := {
 	Animations.WIGGLE: "wiggle",
 	Animations.FLOAT_BOB: "float_bob",
 	Animations.GLOW_PULSE: "glow_pulse",
-	Animations.TWIST: "twist"
+	Animations.TWIST: "twist",
+	Animations.DISAPPEAR : "disappear",
+	Animations.ROTATE_HOP : "rotate_hop",
+	Animations.EXPLODE : "explode",
+	Animations.BLACK_HOLE : "black_hole",
 }
 #endregion
 
@@ -236,9 +241,66 @@ static func glow_pulse(node: CanvasItem, scale_amt: float = 0.05, alpha_amt: flo
 	tween.parallel().tween_property(node, "modulate:a", 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_store_animation(node, "glow_pulse", tween)
 
+## Rotates a bit while doing a mini-hop, good for idle feedback.
+static func rotate_hop(node: Node2D, angle: float = 15.0, height: float = 10.0, duration: float = 0.4) -> void:
+	if _has_active_animation(node, "rotate_hop"):
+		_stop_animation(node, "rotate_hop")
+		node.rotation_degrees = 0
+		return
+	var start_pos = node.position
+	var tween = node.get_tree().create_tween()
+	tween.set_loops()
+	tween.tween_property(node, "rotation_degrees", angle, duration * 0.25)
+	tween.parallel().tween_property(node, "position:y", start_pos.y - height, duration * 0.25)
+	tween.tween_property(node, "rotation_degrees", -angle, duration * 0.25)
+	tween.parallel().tween_property(node, "position:y", start_pos.y + height, duration * 0.25)
+	tween.tween_property(node, "rotation_degrees", 0, duration * 0.25)
+	tween.parallel().tween_property(node, "position:y", start_pos.y, duration * 0.25)
+	_store_animation(node, "rotate_hop", tween)
+
 #endregion
 
 #region One-Shot Effects
+
+static func black_hole(node: Node2D, duration: float = 0.8, restore_after_black_hole : bool = false) -> void:
+	var tween = node.get_tree().create_tween()
+	tween.parallel().tween_property(node, "scale", Vector2.ZERO, duration).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(node, "modulate:a", 0.0, duration)
+	tween.parallel().tween_property(node, "rotation_degrees", node.rotation_degrees + 720, duration)
+
+	if restore_after_black_hole :
+		await tween.finished
+		node.rotation_degrees = 0
+		pop_in(node)
+
+static func explode(node: Node2D, scale_amt: float = 1.8, duration: float = 0.4, restore_after_explode : bool = false) -> void:
+	var tween := node.get_tree().create_tween()
+
+	# Step 1: Pop outward quickly
+	tween.tween_property(node, "scale", Vector2.ONE * scale_amt, duration * 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	# Step 2: Add a slight rotation & wobble back
+	tween.parallel().tween_property(node, "rotation_degrees", randf_range(-10, 10), duration * 0.2)
+	tween.tween_property(node, "scale", Vector2.ONE * 0.5, duration * 0.4).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+
+	# Step 3: Fade out clean
+	tween.parallel().tween_property(node, "modulate:a", 0.0, duration * 0.4).set_trans(Tween.TRANS_LINEAR)
+
+	if restore_after_explode :
+		await tween.finished
+		node.rotation_degrees = 0
+		pop_in(node)
+
+## Makes the node shrink; optionally resets after (mainly for test purpose).
+static func disappear(node: Node2D, duration: float = 0.3, restore_after_disappear : bool = false) -> void:
+	var tween = node.get_tree().create_tween()
+	
+	tween.tween_property(node, "scale", Vector2(0, 0), duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property(node, "modulate:a", 0.0, duration)
+	
+	if restore_after_disappear :
+		await tween.finished
+		pop_in(node)
 
 ## Reveals the label's text one character at a time.
 static func typewriter(label: Control, speed: float = 0.05) -> void:
@@ -283,7 +345,7 @@ static func charge_up(node: CanvasItem, duration: float = 1.0) -> void:
 	tween.tween_property(node, "scale", original_scale, duration * 0.2).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(node, "modulate", original_color, duration * 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
-## Shrinks the node.
+## Makes the node shrinks a bit and shake like it took a punch.
 static func punch_out(node: CanvasItem, duration: float = 0.5, min_scale : float = 0.5) -> void:
 	var original_scale = node.scale
 	var original_pos = node.position
@@ -543,8 +605,8 @@ static func vanish(node: CanvasItem, duration := 0.4, restore_after_fade : bool 
 
 	# Restore original values after fade
 	if restore_after_fade :
-		tween.tween_callback(func(): node.scale = Vector2(1, 1))
-		tween.tween_callback(func(): node.modulate.a = 1.0)
+		await tween.finished
+		pop_in(node)
 
 ## Quickly scales the node in with a slight bounce.
 static func punch_in(node: Node2D, strength: float = 0.3, duration: float = 0.15) -> void:
@@ -590,7 +652,7 @@ static func _store_animation(node: Node, anim_type: String, tween: Tween) -> voi
 	if not tween.is_connected("finished", _on_tween_finished):
 		tween.connect("finished", _on_tween_finished.bind(node, anim_type))
 
-static func _stop_animation(node: Node, anim_type: String) -> void:
+static func _stop_animation(node: Node, anim_type: String) -> void: ## TODO : Add smoothing so it doesn't stop abruptly
 	if _has_active_animation(node, anim_type):
 		var tween = node_tweens[node][anim_type]
 		tween.kill()
