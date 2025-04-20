@@ -10,7 +10,7 @@
 
 class_name TweenAnimator extends EditorPlugin
 
-# Global state dictionary to track node animations
+# Global state dictionary to track node active animations and origin parameters
 static var node_tweens: Dictionary = {}
 
 #region Animations Enum and animations_names Dictionnary
@@ -25,7 +25,8 @@ enum Animations {
 	GLOW_PULSE,       TWIST,            SPOTLIGHT_ON,     SPOTLIGHT_OFF,  DISAPPEAR,
 	ROTATE_HOP,       EXPLODE,          BLACK_HOLE,       
 	MELT,             TV_SHUTDOWN,      HELICOPTER_CRAZY, CHAOS_SPIN_BOUNCE,
-	IDLE_RUBBER,      BUBBLE_ASCEND,    CREEP_OUT
+	IDLE_RUBBER,      BUBBLE_ASCEND,    CREEP_OUT,
+	TEST
 }
 
 static var animation_names := {
@@ -75,9 +76,15 @@ static var animation_names := {
 	Animations.CHAOS_SPIN_BOUNCE: "chaos_spin_bounce",
 	Animations.IDLE_RUBBER: "idle_rubber",
 	Animations.BUBBLE_ASCEND: "bubble_ascend",
-	Animations.CREEP_OUT: "creep_out"
+	Animations.CREEP_OUT: "creep_out",
+	
+	Animations.TEST : "test"
 }
 #endregion
+
+## Prototype Animations ! NOTE : Do not hesitate to send them to me so I can include them in the plugin :)
+static func test(node: Node2D, duration: float = 1.0) -> void:
+	pass
 
 #region Looping
 
@@ -85,13 +92,10 @@ static var animation_names := {
 static func color_cycle(node: CanvasItem, duration: float = 3.0) -> void:
 	if _has_active_animation(node, "color_cycle"):
 		_stop_animation(node, "color_cycle")
-		node.modulate = Color.WHITE
+		node.modulate = node_tweens[node]["original_color"]
 		return
 	
-	var original_color = node.modulate
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_color"] = original_color
+	_store_original_property(node, "original_color", "modulate")
 	
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
@@ -119,13 +123,11 @@ static func color_cycle(node: CanvasItem, duration: float = 3.0) -> void:
 static func heartbeat(node: Node2D, strength: float = 0.2, interval: float = 1.0) -> void:
 	if _has_active_animation(node, "heartbeat"):
 		_stop_animation(node, "heartbeat")
-		node.scale = Vector2.ONE
+		node.scale = node_tweens[node]["original_scale"]
 		return
 	
 	var original_scale = node.scale
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_scale"] = original_scale
+	_store_original_property(node, "original_scale", "scale")
 	
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
@@ -150,8 +152,10 @@ static func heartbeat(node: Node2D, strength: float = 0.2, interval: float = 1.0
 static func swing(node: Node, angle: float = 30.0, duration: float = 1.0) -> void:
 	if _has_active_animation(node, "swing"):
 		_stop_animation(node, "swing")
-		node.rotation_degrees = 0
+		node.rotation_degrees = node_tweens[node]["original_rotation_degrees"]
 		return
+	
+	_store_original_property(node, "original_rotation_degrees", "rotation_degrees")
 	
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
@@ -168,14 +172,12 @@ static func swing(node: Node, angle: float = 30.0, duration: float = 1.0) -> voi
 static func wave_distort(node: CanvasItem, duration: float = 1.0, amplitude: float = 0.1) -> void:
 	if _has_active_animation(node, "wave_distort"):
 		_stop_animation(node, "wave_distort")
-		node.scale = Vector2.ONE
+		node.scale = node_tweens[node]["original_scale"]
 		node.skew = 0
 		return
 	
 	var original_scale = node.scale
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_scale"] = original_scale
+	_store_original_property(node, "original_scale", "scale")
 	
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
@@ -205,46 +207,59 @@ static func wave_distort(node: CanvasItem, duration: float = 1.0, amplitude: flo
 static func wiggle(node: Node) -> void:
 	if _has_active_animation(node, "wiggle"):
 		_stop_animation(node, "wiggle")
-		node.rotation_degrees = 0
+		node.rotation_degrees = node_tweens[node]["original_rotation_degrees"]
 		return
-	
-	var wiggle_tween: Tween = node.get_tree().create_tween()
-	wiggle_tween.set_loops()
-	wiggle_tween.tween_property(node, "rotation_degrees", 5.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	wiggle_tween.tween_property(node, "rotation_degrees", -5.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	wiggle_tween.tween_property(node, "rotation_degrees", 0.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_store_animation(node, "wiggle", wiggle_tween)
+
+	_store_original_property(node, "original_rotation_degrees", "rotation_degrees")
+
+	var tween: Tween = node.get_tree().create_tween()
+	tween.set_loops()
+	tween.tween_property(node, "rotation_degrees", 5.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(node, "rotation_degrees", -5.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(node, "rotation_degrees", 0.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	_store_animation(node, "wiggle", tween)
 
 ## Makes the node float up and down in a looping motion.
 static func float_bob(node: Node2D, height := 5.0, speed := 1.0) -> void:
 	if _has_active_animation(node, "bobbing"):
 		_stop_animation(node, "bobbing")
+		node.position = node_tweens[node]["original_position"]
 		return
-	
+
+	_store_original_property(node, "original_position", "position")
+
 	var original_pos := node.position
 	var bob_tween: Tween = node.get_tree().create_tween()
 	bob_tween.set_loops()
 	bob_tween.tween_property(node, "position:y", original_pos.y - height, speed).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	bob_tween.tween_property(node, "position:y", original_pos.y + height, speed).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 	_store_animation(node, "bobbing", bob_tween)
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_pos"] = original_pos
 
 ## Gently pulses the node's scale and opacity in a loop.
 static func glow_pulse(node: CanvasItem, scale_amt: float = 0.05, alpha_amt: float = 0.3, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "glow_pulse"):
 		_stop_animation(node, "glow_pulse")
-		node.scale = Vector2(1, 1)
-		node.modulate.a = 1.0
+		node.scale = node_tweens[node]["original_scale"]
+		node.modulate = node_tweens[node]["original_color"]
 		return
+
+	_store_original_property(node, "original_scale", "scale")
+	_store_original_property(node, "original_color", "modulate")
+
+	var original_scale : Vector2 = node.scale
+	var original_color : Color = node.modulate
 
 	var tween := node.get_tree().create_tween()
 	tween.set_loops()
-	tween.tween_property(node, "scale", Vector2(1 + scale_amt, 1 + scale_amt), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.parallel().tween_property(node, "modulate:a", 1.0 - alpha_amt, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(node, "scale", Vector2(1, 1), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.parallel().tween_property(node, "modulate:a", 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(node, "scale", original_scale * (1.0 + scale_amt), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(node, "modulate:a", original_color.a * (1.0 - alpha_amt), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(node, "modulate:a", original_color.a, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 	_store_animation(node, "glow_pulse", tween)
 
 ## Rotates a bit while doing a mini-hop, good for idle feedback.
@@ -252,32 +267,36 @@ static func rotate_hop(node: Node2D, angle: float = 15.0, height: float = 10.0, 
 	if _has_active_animation(node, "rotate_hop"):
 		_stop_animation(node, "rotate_hop")
 		node.rotation_degrees = 0
+		node.position = node_tweens[node]["original_pos"]
 		return
+
+	_store_original_property(node, "original_pos", "position")
+
 	var start_pos = node.position
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
+
 	tween.tween_property(node, "rotation_degrees", angle, duration * 0.25)
 	tween.parallel().tween_property(node, "position:y", start_pos.y - height, duration * 0.25)
 	tween.tween_property(node, "rotation_degrees", -angle, duration * 0.25)
 	tween.parallel().tween_property(node, "position:y", start_pos.y + height, duration * 0.25)
 	tween.tween_property(node, "rotation_degrees", 0, duration * 0.25)
 	tween.parallel().tween_property(node, "position:y", start_pos.y, duration * 0.25)
+
 	_store_animation(node, "rotate_hop", tween)
 
-## Pure entropy : Spin, Random Jitter, Squash-Strech Bounce
+## Pure entropy: Spin, Random Jitter, Squash-Stretch Bounce
 static func chaos_spin_bounce(node: Node2D, bounce_scale: float = 0.2, spin_speed: float = 180.0, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "chaos_spin_bounce"):
 		_stop_animation(node, "chaos_spin_bounce")
-		node.rotation_degrees = 0
-		node.scale = Vector2.ONE
+		node.rotation_degrees = node_tweens[node]["original_rotation_degrees"]
+		node.scale = node_tweens[node]["original_scale"]
 		return
 
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
+	_store_original_property(node, "original_scale", "scale")
+	_store_original_property(node, "original_rotation_degrees", "rotation_degrees")
 
-	node_tweens[node]["original_scale"] = node.scale
 	var original_scale = node.scale
-
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
 
@@ -291,15 +310,12 @@ static func chaos_spin_bounce(node: Node2D, bounce_scale: float = 0.2, spin_spee
 static func helicopter_crazy(node: Node2D, spin_speed: float = 1080.0, bob_height: float = 5.0, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "helicopter_crazy"):
 		_stop_animation(node, "helicopter_crazy")
-		node.position = node_tweens[node]["original_pos"]
+		node.position = node_tweens[node]["original_position"]
 		return
 
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
+	_store_original_property(node, "original_position", "position")
 
-	node_tweens[node]["original_pos"] = node.position
 	var original_pos = node.position
-
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
 
@@ -314,18 +330,15 @@ static func helicopter_crazy(node: Node2D, spin_speed: float = 1080.0, bob_heigh
 static func melt(node: Node2D, melt_distance: float = 20.0, duration: float = 2.0) -> void:
 	if _has_active_animation(node, "melt"):
 		_stop_animation(node, "melt")
-		node.position = node_tweens[node]["original_pos"]
+		node.position = node_tweens[node]["original_position"]
 		node.scale = node_tweens[node]["original_scale"]
 		return
 
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_pos"] = node.position
-	node_tweens[node]["original_scale"] = node.scale
+	_store_original_property(node, "original_position", "position")
+	_store_original_property(node, "original_scale", "scale")
 
 	var original_pos = node.position
 	var original_scale = node.scale
-
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
 
@@ -336,28 +349,27 @@ static func melt(node: Node2D, melt_distance: float = 20.0, duration: float = 2.
 
 	_store_animation(node, "melt", tween)
 
-## Gives the object rubbery springy movement
+## Gives the object rubbery springy movement.
 static func idle_rubber(node: Node2D, strength: float = 0.1, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "rubber_frog"):
 		_stop_animation(node, "rubber_frog")
-		node.scale = Vector2.ONE
-		node.position = node_tweens[node]["original_pos"]
+		node.scale = node_tweens[node]["original_scale"]
+		node.position = node_tweens[node]["original_position"]
 		return
 
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_pos"] = node.position
+	_store_original_property(node, "original_position", "position")
+	_store_original_property(node, "original_scale", "scale")
 
 	var original_pos = node.position
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
 
 	tween.tween_property(node, "position:x", original_pos.x + 6, duration * 0.3)
-	tween.parallel().tween_property(node, "scale", Vector2(1.1, 0.9), duration * 0.3)
+	tween.parallel().tween_property(node, "scale", node.scale * Vector2(1.1, 0.9), duration * 0.3)
 	tween.tween_property(node, "position:x", original_pos.x - 6, duration * 0.3)
-	tween.parallel().tween_property(node, "scale", Vector2(0.9, 1.1), duration * 0.3)
+	tween.parallel().tween_property(node, "scale", node.scale * Vector2(0.9, 1.1), duration * 0.3)
 	tween.tween_property(node, "position:x", original_pos.x, duration * 0.3)
-	tween.parallel().tween_property(node, "scale", Vector2.ONE, duration * 0.3)
+	tween.parallel().tween_property(node, "scale", node_tweens[node]["original_scale"], duration * 0.3)
 
 	_store_animation(node, "rubber_frog", tween)
 
@@ -365,23 +377,22 @@ static func idle_rubber(node: Node2D, strength: float = 0.1, duration: float = 0
 static func bubble_ascend(node: Node2D, height: float = 15.0, duration: float = 2.0) -> void:
 	if _has_active_animation(node, "bubble_ascend"):
 		_stop_animation(node, "bubble_ascend")
-		node.position = node_tweens[node]["original_pos"]
-		node.scale = Vector2.ONE
+		node.position = node_tweens[node]["original_position"]
+		node.scale = node_tweens[node]["original_scale"]
 		return
 
-	if not node_tweens.has(node):
-		node_tweens[node] = {}
-	node_tweens[node]["original_pos"] = node.position
+	_store_original_property(node, "original_position", "position")
+	_store_original_property(node, "original_scale", "scale")
 
 	var original_pos = node.position
-
+	var original_scale = node.scale
 	var tween = node.get_tree().create_tween()
 	tween.set_loops()
 
 	tween.tween_property(node, "position:y", original_pos.y - height, duration * 0.6).set_trans(Tween.TRANS_SINE)
-	tween.parallel().tween_property(node, "scale:y", 0.95, duration * 0.3)
+	tween.parallel().tween_property(node, "scale:y", original_scale.y * 0.95, duration * 0.3)
 	tween.tween_property(node, "position:y", original_pos.y, duration * 0.4).set_trans(Tween.TRANS_SINE)
-	tween.parallel().tween_property(node, "scale", Vector2.ONE, duration * 0.2)
+	tween.parallel().tween_property(node, "scale", original_scale, duration * 0.2)
 
 	_store_animation(node, "bubble_ascend", tween)
 
@@ -400,6 +411,8 @@ static func creep_out(node: Node2D, duration: float = 1.0, restore_after_creep_o
 
 	if restore_after_creep_out :
 		await tween.finished
+		node.modulate = Color.WHITE
+		node.scale = original_scale
 		fade_in(node)
 
 ## Makes object look like they're being shutdown like a cartoon TV. Optionally resets after (mainly for test purpose).
@@ -414,7 +427,7 @@ static func tv_shutdown(node: Node2D, duration: float = 0.5, restore_after_tv_sh
 	if restore_after_tv_shutdown :
 		await tween.finished
 		fade_in(node)
-		node.scale = Vector2.ONE
+		node.scale = original_scale
 
 ## Spins and disappears.
 static func black_hole(node: Node2D, duration: float = 0.8, restore_after_black_hole : bool = false) -> void:
@@ -450,12 +463,15 @@ static func explode(node: Node2D, scale_amt: float = 1.8, duration: float = 0.4,
 ## Makes the node shrink. Optionally resets after (mainly for test purpose).
 static func disappear(node: Node2D, duration: float = 0.3, restore_after_disappear : bool = false) -> void:
 	var tween = node.get_tree().create_tween()
+	var original_transform := node.transform
 	
 	tween.tween_property(node, "scale", Vector2(0, 0), duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tween.tween_property(node, "modulate:a", 0.0, duration)
 	
 	if restore_after_disappear :
 		await tween.finished
+		node.transform = original_transform
+		node.modulate = Color.WHITE
 		pop_in(node)
 
 ## Reveals the label's text one character at a time.
@@ -640,9 +656,11 @@ static func spotlight(node: CanvasItem, duration: float = 1.0, state : String = 
 
 ## Flips the node horizontally with a quick rotation.
 static func flip(node: Node2D, duration: float = 0.4) -> void:
+	var original_scale := node.scale
+
 	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "scale:x", -1.0, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(node, "scale:x", 1.0, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(node, "scale:x", -original_scale.x, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(node, "scale:x", original_scale.x, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## Makes the node hop upward and land back down.
 static func hop(node: Node2D, height: float = 20.0, duration: float = 0.4) -> void:
@@ -660,21 +678,24 @@ static func blink(node: CanvasItem, duration: float = 0.1, times: int = 3) -> vo
 
 ## Flattens the node vertically, then returns it to normal.
 static func squash(node: Node2D, amount: float = 0.3, duration: float = 0.2) -> void:
+	var original_scale := node.scale
 	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "scale", Vector2(1 + amount, 1 - amount), duration * 0.5).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(node, "scale", Vector2(1, 1), duration * 0.5).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(node, "scale", Vector2(original_scale.x * (1 + amount), original_scale.y * (1 - amount)), duration * 0.5).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(node, "scale", original_scale, duration * 0.5).set_trans(Tween.TRANS_SINE)
 
 ## Stretches the node vertically and then returns to original scale.
 static func stretch(node: Node2D, amount: float = 0.3, duration: float = 0.2) -> void:
+	var original_scale := node.scale
 	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "scale", Vector2(1 - amount, 1 + amount), duration * 0.5).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(node, "scale", Vector2(1, 1), duration * 0.5).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(node, "scale", Vector2(original_scale.x * (1 - amount), original_scale.y * (1 + amount)), duration * 0.5).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(node, "scale", original_scale, duration * 0.5).set_trans(Tween.TRANS_SINE)
 
 ## Scales the node up quickly, then resets it.
 static func snap(node: Node2D, scale_amount: float = 1.3, duration: float = 0.1) -> void:
+	var original_scale := node.scale
 	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "scale", Vector2(scale_amount, scale_amount), duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2(1, 1), duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property(node, "scale", original_scale * scale_amount, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 
 ## Quickly toggles visibility to create a flashing effect.
 static func flash(node: CanvasItem, flashes: int = 3, duration: float = 0.1) -> void:
@@ -732,29 +753,39 @@ static func spin(node: Node2D, revolutions: float = 1.0, duration: float = 0.5) 
 	tween.tween_property(node, "rotation_degrees", end_rotation, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 
 ## Quickly scales in the node from zero to full size, like it just appears.
-static func pop_in(node: CanvasItem) -> void:
-	node.scale = Vector2(0.0, 0.0)
-	node.modulate.a = 0.0
-	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "scale", Vector2(1.1, 1.1), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2(1, 1), 0.1)
-	tween.parallel().tween_property(node, "modulate:a", 1.0, 0.2)
+static func pop_in(node: CanvasItem, overshoot: float = 0.1, duration: float = 0.3) -> void:
+	var original_scale : Vector2 = node.scale
+	var original_color := node.modulate
 
+	node.scale = Vector2.ZERO
+	node.modulate.a = 0.0
+
+	var tween := node.get_tree().create_tween()
+	tween.tween_property(node, "scale", original_scale * (1.0 + overshoot), duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "scale", original_scale, duration * 0.33)
+	tween.parallel().tween_property(node, "modulate:a", original_color.a, duration * 0.66)
+	
 ## Skews the node along X and Y axes temporarily.
 static func skew(node: Node2D, skew_x: float = 0.5, skew_y: float = 0.5, duration: float = 0.3) -> void:
+	var original_scale := node.scale
+	var target_scale := original_scale * Vector2(1.0 + skew_x, 1.0 + skew_y)
+
 	var tween := node.get_tree().create_tween()
-	var target_scale := Vector2(1 + skew_x, 1 + skew_y)
 	tween.tween_property(node, "scale", target_scale, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(node, "scale", Vector2(1, 1), duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT).set_delay(duration)
+	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT).set_delay(duration)
 
 ## Warps the node with a quick distortion motion.
-static func warp(node: Node2D) -> void:
+static func warp(node: Node2D, squash: Vector2 = Vector2(1.2, 0.8), duration: float = 0.2) -> void:
+	var original_scale := node.scale
+
 	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "scale", Vector2(1.2, 0.8), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(node, "scale", Vector2(1, 1), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(node, "scale", squash, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 ##  Fades out and scales down the node. Optionally resets after (mainly for test purpose).
 static func vanish(node: CanvasItem, duration := 0.4, restore_after_fade : bool = false) -> void:
+	var original_transform = node.transform
+	
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "modulate:a", 0.0, duration)
 	tween.parallel().tween_property(node, "scale", Vector2(0.0, 0.0), duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
@@ -762,6 +793,8 @@ static func vanish(node: CanvasItem, duration := 0.4, restore_after_fade : bool 
 	# Restore original values after fade
 	if restore_after_fade :
 		await tween.finished
+		node.transform = original_transform
+		node.modulate = Color.WHITE
 		pop_in(node)
 
 ## Quickly scales the node in with a slight bounce.
@@ -782,16 +815,19 @@ static func shake(node: Node2D, amount: float = 10.0, shakes: int = 5, duration:
 		tween.tween_property(node, "position", original_pos, duration / (shakes * 2))
 
 ## Drops the node from above into its original position.
-static func drop_in(node: CanvasItem, drop_height: float = 100.0, duration: float = 0.5) -> void:
-	var start_pos = node.position - Vector2(0, drop_height)
-	node.position = start_pos
-	node.scale = Vector2(1.2, 0.8)
+static func drop_in(node: CanvasItem, drop_height: float = 100.0, duration: float = 0.5, scale_distort: Vector2 = Vector2(1.2, 0.8)) -> void:
+	var original_pos = node.position
+	var original_scale = node.scale
+	var original_color = node.modulate
+
+	node.position = original_pos - Vector2(0, drop_height)
+	node.scale = scale_distort
 	node.modulate.a = 0.0
-	
+
 	var tween := node.get_tree().create_tween()
-	tween.tween_property(node, "position", node.position + Vector2(0, drop_height), duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(node, "scale", Vector2(1, 1), duration * 0.6).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(node, "modulate:a", 1.0, duration * 0.4)
+	tween.tween_property(node, "position", original_pos, duration).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(node, "scale", original_scale, duration * 0.6).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(node, "modulate:a", original_color.a, duration * 0.4)
 
 #endregion
 
@@ -827,4 +863,9 @@ static func _on_tween_finished(node: Node, anim_type: String) -> void:
 		if node_tweens[node].is_empty():
 			node_tweens.erase(node)
 
+static func _store_original_property(node: Node, key: String, property_name: String):
+	if not node_tweens.has(node):
+		node_tweens[node] = {}
+	node_tweens[node][key] = node.get(property_name)
+	
 #endregion
