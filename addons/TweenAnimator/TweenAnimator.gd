@@ -82,8 +82,8 @@ static var animation_names := {
 }
 #endregion
 
-## Prototype Animations ! NOTE : Do not hesitate to send them to me so I can include them in the plugin :)
-static func test(node: Node2D, duration: float = 1.0) -> void:
+## Prototype Animations ! NOTE : Do not hesitate to send it to me so I can include them in the plugin :)
+static func test(node: Node, duration: float = 1.0) -> void:
 	pass
 
 #region Looping
@@ -120,7 +120,7 @@ static func color_cycle(node: CanvasItem, duration: float = 3.0) -> void:
 	_store_animation(node, "color_cycle", tween)
 
 ## Simulates a heartbeat with two rhythmic pulses.
-static func heartbeat(node: Node2D, strength: float = 0.2, interval: float = 1.0) -> void:
+static func heartbeat(node: Node, strength: float = 0.2, interval: float = 1.0) -> void:
 	if _has_active_animation(node, "heartbeat"):
 		_stop_animation(node, "heartbeat")
 		node.scale = node_tweens[node]["original_scale"]
@@ -221,7 +221,7 @@ static func wiggle(node: Node) -> void:
 	_store_animation(node, "wiggle", tween)
 
 ## Makes the node float up and down in a looping motion.
-static func float_bob(node: Node2D, height := 5.0, speed := 1.0) -> void:
+static func float_bob(node: Node, height := 5.0, speed := 1.0) -> void:
 	if _has_active_animation(node, "bobbing"):
 		_stop_animation(node, "bobbing")
 		node.position = node_tweens[node]["original_position"]
@@ -229,7 +229,7 @@ static func float_bob(node: Node2D, height := 5.0, speed := 1.0) -> void:
 
 	_store_original_property(node, "original_position", "position")
 
-	var original_pos := node.position
+	var original_pos : Vector2 = node.position
 	var bob_tween: Tween = node.get_tree().create_tween()
 	bob_tween.set_loops()
 	bob_tween.tween_property(node, "position:y", original_pos.y - height, speed).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -263,7 +263,7 @@ static func glow_pulse(node: CanvasItem, scale_amt: float = 0.05, alpha_amt: flo
 	_store_animation(node, "glow_pulse", tween)
 
 ## Rotates a bit while doing a mini-hop, good for idle feedback.
-static func rotate_hop(node: Node2D, angle: float = 15.0, height: float = 10.0, duration: float = 0.4) -> void:
+static func rotate_hop(node: Node, angle: float = 15.0, height: float = 10.0, duration: float = 0.4) -> void:
 	if _has_active_animation(node, "rotate_hop"):
 		_stop_animation(node, "rotate_hop")
 		node.rotation_degrees = 0
@@ -286,7 +286,7 @@ static func rotate_hop(node: Node2D, angle: float = 15.0, height: float = 10.0, 
 	_store_animation(node, "rotate_hop", tween)
 
 ## Pure entropy: Spin, Random Jitter, Squash-Stretch Bounce
-static func chaos_spin_bounce(node: Node2D, bounce_scale: float = 0.2, spin_speed: float = 180.0, duration: float = 0.6) -> void:
+static func chaos_spin_bounce(node: Node, bounce_scale: float = 0.2, spin_speed: float = 180.0, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "chaos_spin_bounce"):
 		_stop_animation(node, "chaos_spin_bounce")
 		node.rotation_degrees = node_tweens[node]["original_rotation_degrees"]
@@ -307,7 +307,7 @@ static func chaos_spin_bounce(node: Node2D, bounce_scale: float = 0.2, spin_spee
 	_store_animation(node, "chaos_spin_bounce", tween)
 
 ## Makes object look like they're trying to fly off in a panic.
-static func helicopter_crazy(node: Node2D, spin_speed: float = 1080.0, bob_height: float = 5.0, duration: float = 0.6) -> void:
+static func helicopter_crazy(node: Node, spin_speed: float = 1080.0, bob_height: float = 5.0, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "helicopter_crazy"):
 		_stop_animation(node, "helicopter_crazy")
 		node.position = node_tweens[node]["original_position"]
@@ -327,7 +327,7 @@ static func helicopter_crazy(node: Node2D, spin_speed: float = 1080.0, bob_heigh
 	_store_animation(node, "helicopter_crazy", tween)
 
 ## Makes objects drip down slowly and squash — like they're melting.
-static func melt(node: Node2D, melt_distance: float = 20.0, duration: float = 2.0) -> void:
+static func melt(node: Node, melt_distance: float = 20.0, duration: float = 2.0) -> void:
 	if _has_active_animation(node, "melt"):
 		_stop_animation(node, "melt")
 		node.position = node_tweens[node]["original_position"]
@@ -350,7 +350,7 @@ static func melt(node: Node2D, melt_distance: float = 20.0, duration: float = 2.
 	_store_animation(node, "melt", tween)
 
 ## Gives the object rubbery springy movement.
-static func idle_rubber(node: Node2D, strength: float = 0.1, duration: float = 0.6) -> void:
+static func idle_rubber(node: Node, strength: float = 0.1, duration: float = 0.6) -> void:
 	if _has_active_animation(node, "rubber_frog"):
 		_stop_animation(node, "rubber_frog")
 		node.scale = node_tweens[node]["original_scale"]
@@ -374,7 +374,7 @@ static func idle_rubber(node: Node2D, strength: float = 0.1, duration: float = 0
 	_store_animation(node, "rubber_frog", tween)
 
 ## Floats with a bit of distortion.
-static func bubble_ascend(node: Node2D, height: float = 15.0, duration: float = 2.0) -> void:
+static func bubble_ascend(node: Node, height: float = 15.0, duration: float = 2.0) -> void:
 	if _has_active_animation(node, "bubble_ascend"):
 		_stop_animation(node, "bubble_ascend")
 		node.position = node_tweens[node]["original_position"]
@@ -401,7 +401,7 @@ static func bubble_ascend(node: Node2D, height: float = 15.0, duration: float = 
 #region One-Shot Effects
 
 ## Object gets back in the dark where it belongs. Optionally resets after (mainly for test purpose).
-static func creep_out(node: Node2D, duration: float = 1.0, restore_after_creep_out : bool = false) -> void:
+static func creep_out(node: Node, duration: float = 1.0, restore_after_creep_out : bool = false) -> void:
 	var original_scale = node.scale
 	var tween = node.get_tree().create_tween()
 
@@ -416,7 +416,7 @@ static func creep_out(node: Node2D, duration: float = 1.0, restore_after_creep_o
 		fade_in(node)
 
 ## Makes object look like they're being shutdown like a cartoon TV. Optionally resets after (mainly for test purpose).
-static func tv_shutdown(node: Node2D, duration: float = 0.5, restore_after_tv_shutdown : bool = false) -> void:
+static func tv_shutdown(node: Node, duration: float = 0.5, restore_after_tv_shutdown : bool = false) -> void:
 	var original_scale = node.scale
 	var tween = node.get_tree().create_tween()
 
@@ -430,7 +430,7 @@ static func tv_shutdown(node: Node2D, duration: float = 0.5, restore_after_tv_sh
 		node.scale = original_scale
 
 ## Spins and disappears.
-static func black_hole(node: Node2D, duration: float = 0.8, restore_after_black_hole : bool = false) -> void:
+static func black_hole(node: Node, duration: float = 0.8, restore_after_black_hole : bool = false) -> void:
 	var tween = node.get_tree().create_tween()
 	tween.parallel().tween_property(node, "scale", Vector2.ZERO, duration).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(node, "modulate:a", 0.0, duration)
@@ -442,7 +442,7 @@ static func black_hole(node: Node2D, duration: float = 0.8, restore_after_black_
 		pop_in(node)
 
 ## Boom! Optionally resets after (mainly for test purpose).
-static func explode(node: Node2D, scale_amt: float = 1.8, duration: float = 0.4, restore_after_explode : bool = false) -> void:
+static func explode(node: Node, scale_amt: float = 1.8, duration: float = 0.4, restore_after_explode : bool = false) -> void:
 	var tween := node.get_tree().create_tween()
 
 	# Step 1: Pop outward quickly
@@ -461,9 +461,9 @@ static func explode(node: Node2D, scale_amt: float = 1.8, duration: float = 0.4,
 		pop_in(node)
 
 ## Makes the node shrink. Optionally resets after (mainly for test purpose).
-static func disappear(node: Node2D, duration: float = 0.3, restore_after_disappear : bool = false) -> void:
+static func disappear(node: Node, duration: float = 0.3, restore_after_disappear : bool = false) -> void:
 	var tween = node.get_tree().create_tween()
-	var original_transform := node.transform
+	var original_transform : Transform2D = node.transform
 	
 	tween.tween_property(node, "scale", Vector2(0, 0), duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tween.tween_property(node, "modulate:a", 0.0, duration)
@@ -547,7 +547,7 @@ static func punch_out(node: CanvasItem, duration: float = 0.5, min_scale : float
 	tween.parallel().tween_property(node, "position", original_pos, duration * 0.1)
 
 ## Makes the node bounce around as if hitting walls.
-static func ricochet(node: Node2D, strength: float = 30.0, bounces: int = 4, duration: float = 0.8) -> void:
+static func ricochet(node: Node, strength: float = 30.0, bounces: int = 4, duration: float = 0.8) -> void:
 	var original_pos = node.position
 	var tween = node.get_tree().create_tween()
 	
@@ -600,7 +600,7 @@ static func glitch(node: CanvasItem, duration: float = 1.0, intensity: float = 1
 	tween.parallel().tween_property(node, "modulate", original_color, 0.1)
 
 ## A fast zoom and shake effect for a startling impact.
-static func jump_scare(node: Node2D, intensity: float = 1.3, duration: float = 0.4) -> void:
+static func jump_scare(node: Node, intensity: float = 1.3, duration: float = 0.4) -> void:
 	var original_scale = node.scale
 	var original_pos = node.position
 	var tween = node.get_tree().create_tween()
@@ -655,16 +655,16 @@ static func spotlight(node: CanvasItem, duration: float = 1.0, state : String = 
 		tween.tween_property(node, "modulate", glow_color, duration * 0.4)
 
 ## Flips the node horizontally with a quick rotation.
-static func flip(node: Node2D, duration: float = 0.4) -> void:
-	var original_scale := node.scale
+static func flip(node: Node, duration: float = 0.4) -> void:
+	var original_scale : Vector2 = node.scale
 
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale:x", -original_scale.x, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(node, "scale:x", original_scale.x, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## Makes the node hop upward and land back down.
-static func hop(node: Node2D, height: float = 20.0, duration: float = 0.4) -> void:
-	var original_pos := node.position
+static func hop(node: Node, height: float = 20.0, duration: float = 0.4) -> void:
+	var original_pos : Vector2 = node.position
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "position:y", original_pos.y - height, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "position:y", original_pos.y, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
@@ -677,22 +677,22 @@ static func blink(node: CanvasItem, duration: float = 0.1, times: int = 3) -> vo
 		tween.tween_property(node, "modulate:a", 1.0, duration)
 
 ## Flattens the node vertically, then returns it to normal.
-static func squash(node: Node2D, amount: float = 0.3, duration: float = 0.2) -> void:
-	var original_scale := node.scale
+static func squash(node: Node, amount: float = 0.3, duration: float = 0.2) -> void:
+	var original_scale : Vector2= node.scale
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale", Vector2(original_scale.x * (1 + amount), original_scale.y * (1 - amount)), duration * 0.5).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(node, "scale", original_scale, duration * 0.5).set_trans(Tween.TRANS_SINE)
 
 ## Stretches the node vertically and then returns to original scale.
-static func stretch(node: Node2D, amount: float = 0.3, duration: float = 0.2) -> void:
-	var original_scale := node.scale
+static func stretch(node: Node, amount: float = 0.3, duration: float = 0.2) -> void:
+	var original_scale : Vector2 = node.scale
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale", Vector2(original_scale.x * (1 - amount), original_scale.y * (1 + amount)), duration * 0.5).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(node, "scale", original_scale, duration * 0.5).set_trans(Tween.TRANS_SINE)
 
 ## Scales the node up quickly, then resets it.
-static func snap(node: Node2D, scale_amount: float = 1.3, duration: float = 0.1) -> void:
-	var original_scale := node.scale
+static func snap(node: Node, scale_amount: float = 1.3, duration: float = 0.1) -> void:
+	var original_scale : Vector2 = node.scale
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale", original_scale * scale_amount, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
@@ -716,21 +716,21 @@ static func fade_out(node: CanvasItem, duration: float = 0.5) -> void:
 	tween.tween_property(node, "modulate:a", 0.0, duration).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_OUT)
 
 ## Twists the node in place with a quick rotation.
-static func twist(node: Node2D, angle: float = 30.0, duration: float = 0.4) -> void:
-	var start := node.rotation_degrees
+static func twist(node: Node, angle: float = 30.0, duration: float = 0.4) -> void:
+	var start = node.rotation_degrees
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "rotation_degrees", start + angle, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "rotation_degrees", start, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 
 ## Expands and contracts the node once with a pulse.
-static func pulsate(node: Node2D, scale_factor: float = 1.2, duration: float = 0.5) -> void:
+static func pulsate(node: Node, scale_factor: float = 1.2, duration: float = 0.5) -> void:
 	var original_scale = node.scale
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale", original_scale * scale_factor, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(node, "scale", original_scale, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## Shakes the node slightly and rapidly for a jitter effect.
-static func jitter(node: Node2D, amount: float = 3.0, duration: float = 0.1, times: int = 10) -> void:
+static func jitter(node: Node, amount: float = 3.0, duration: float = 0.1, times: int = 10) -> void:
 	var original_position = node.position
 	var tween := node.get_tree().create_tween()
 	for i in range(times):
@@ -739,14 +739,14 @@ static func jitter(node: Node2D, amount: float = 3.0, duration: float = 0.1, tim
 		tween.tween_property(node, "position", original_position, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## Scales the node irregularly to create a wiggling effect.
-static func wiggle_scale(node: Node2D, amount: float = 0.1, duration: float = 0.5) -> void:
+static func wiggle_scale(node: Node, amount: float = 0.1, duration: float = 0.5) -> void:
 	var original_scale = node.scale
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale", original_scale * Vector2(1 + amount, 1 - amount), duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(node, "scale", original_scale, duration * 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## Rotates the node around its center one or more times.
-static func spin(node: Node2D, revolutions: float = 1.0, duration: float = 0.5) -> void:
+static func spin(node: Node, revolutions: float = 1.0, duration: float = 0.5) -> void:
 	var start_rotation = node.rotation_degrees
 	var end_rotation = start_rotation + 360.0 * revolutions
 	var tween := node.get_tree().create_tween()
@@ -766,8 +766,8 @@ static func pop_in(node: CanvasItem, overshoot: float = 0.1, duration: float = 0
 	tween.parallel().tween_property(node, "modulate:a", original_color.a, duration * 0.66)
 	
 ## Skews the node along X and Y axes temporarily.
-static func skew(node: Node2D, skew_x: float = 0.5, skew_y: float = 0.5, duration: float = 0.3) -> void:
-	var original_scale := node.scale
+static func skew(node: Node, skew_x: float = 0.5, skew_y: float = 0.5, duration: float = 0.3) -> void:
+	var original_scale : Vector2 = node.scale
 	var target_scale := original_scale * Vector2(1.0 + skew_x, 1.0 + skew_y)
 
 	var tween := node.get_tree().create_tween()
@@ -775,8 +775,8 @@ static func skew(node: Node2D, skew_x: float = 0.5, skew_y: float = 0.5, duratio
 	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT).set_delay(duration)
 
 ## Warps the node with a quick distortion motion.
-static func warp(node: Node2D, squash: Vector2 = Vector2(1.2, 0.8), duration: float = 0.2) -> void:
-	var original_scale := node.scale
+static func warp(node: Node, squash: Vector2 = Vector2(1.2, 0.8), duration: float = 0.2) -> void:
+	var original_scale : Vector2 = node.scale
 
 	var tween := node.get_tree().create_tween()
 	tween.tween_property(node, "scale", squash, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -798,7 +798,7 @@ static func vanish(node: CanvasItem, duration := 0.4, restore_after_fade : bool 
 		pop_in(node)
 
 ## Quickly scales the node in with a slight bounce.
-static func punch_in(node: Node2D, strength: float = 0.3, duration: float = 0.15) -> void:
+static func punch_in(node: Node, strength: float = 0.3, duration: float = 0.15) -> void:
 	var original_scale = node.scale
 	var punch_in = original_scale * (1 + strength)
 	var tween := node.get_tree().create_tween()
@@ -806,7 +806,7 @@ static func punch_in(node: Node2D, strength: float = 0.3, duration: float = 0.15
 	tween.tween_property(node, "scale", original_scale, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 ## Moves the node back and forth rapidly for a shake effect.
-static func shake(node: Node2D, amount: float = 10.0, shakes: int = 5, duration: float = 0.3) -> void:
+static func shake(node: Node, amount: float = 10.0, shakes: int = 5, duration: float = 0.3) -> void:
 	var original_pos = node.position
 	var tween := node.get_tree().create_tween()
 	for i in range(shakes):
